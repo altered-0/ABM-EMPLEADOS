@@ -36,6 +36,52 @@ def validaRangoReales(nro, desde, hasta):
         return True
 
 
+def busquedaDico(L):  # Busqueda dicotomica
+    global afEmpleados, alEmpleados
+    alEmpleados.seek(0, 0)
+    aux = pickle.load(alEmpleados)
+    tamReg = alEmpleados.tell()
+    cantReg = os.path.getsize(afEmpleados) // tamReg
+    desde = 0
+    hasta = cantReg - 1  # Cantidad de registros -1
+    medio = (desde + hasta) // 2
+    alEmpleados.seek(medio * tamReg, 0)
+    vrEmp = pickle.load(alEmpleados)
+    while int(vrEmp.legajo) != L and desde < hasta:
+        if L < int(vrEmp.legajo):  # Ajusta intervalo de busqueda
+            hasta = medio - 1
+        else:
+            desde = medio + 1
+        medio = (desde + hasta) // 2
+        alEmpleados.seek(medio * tamReg, 0)
+        vrEmp = pickle.load(alEmpleados)
+    if int(vrEmp.legajo) == L:
+        return medio * tamReg
+    else:  # En caso de no encontrarlo retorna -1
+        return -1
+    # 33 min
+
+
+def ordenaEmpleados():  # Ordenamiento falso burbuja
+    global afEmpleados, alEmpleados
+    alEmpleados.seek(0, 0)
+    aux = pickle.load(alEmpleados)
+    tamReg = alEmpleados.tell()
+    tamArch = os.path.getsize(afEmpleados)
+    cantReg = int(tamArch / tamReg)
+    for i in range(0, cantReg - 1):
+        for j in range(i + 1, cantReg):
+            alEmpleados.seek(i * tamReg, 0)
+            auxi = pickle.load(alEmpleados)
+            alEmpleados.seek(j * tamReg, 0)
+            auxj = pickle.load(alEmpleados)
+            if auxi.legajo > auxj.legajo:
+                alEmpleados.seek(i * tamReg, 0)
+                pickle.dump(auxj, alEmpleados)
+                alEmpleados.seek(j * tamReg, 0)
+                pickle.dump(auxi, alEmpleados)
+
+
 def formatearEmpleado(vrEmp):
     vrEmp.legajo = str(vrEmp.legajo)
     vrEmp.legajo = vrEmp.legajo.ljust(10, " ")
@@ -220,6 +266,14 @@ def listarEmpleadosActivos():
     if t == 0:
         print("No hay empleados registrados")
     else:
+        ordenaEmpleados()
+        encabezado = ""
+        encabezado += "{:<15}".format("Legajo")
+        encabezado += "{:<40}".format("Nombre y Apellido")
+        encabezado += "{:<20}".format("Sueldo")
+        encabezado += "{:<10}".format("Estado")
+        print(encabezado)
+        print("-" * 85)
         emp = Empleado()
         alEmpleados.seek(0)
         while alEmpleados.tell() < t:
@@ -227,6 +281,11 @@ def listarEmpleadosActivos():
             if emp.estado == "A":
                 mostrarEmpleado(emp)
         print()
+        leg = int(input("Ingrese legajo: "))
+        if busquedaDico(leg) == -1:
+            print("Legajo no encontrado")
+        else:
+            print("Legajo encontrado")
     os.system("pause")
 
 
@@ -244,14 +303,12 @@ def mostrarMenu():
 
 
 def mostrarEmpleado(emp):
-    print(
-        """Legajo:\t\t\t {}
-Nombre y apellido:\t {}
-Sueldo:\t\t\t{}
-Estado:\t\t\t{} """.format(
-            emp.legajo, emp.nomyape, emp.sueldo, emp.estado
-        )
-    )
+    salida = ""
+    salida += "{:<15}".format(emp.legajo.strip())
+    salida += "{:<40}".format(emp.nomyape.strip())
+    salida += "{:<20}".format(emp.sueldo.strip())
+    salida += "{:<10}".format(emp.estado.strip())
+    print(salida)
 
 
 ##  PROGRAMA PRINCIPAL
